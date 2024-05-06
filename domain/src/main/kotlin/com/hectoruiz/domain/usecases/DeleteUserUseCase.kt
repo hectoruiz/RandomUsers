@@ -6,7 +6,5 @@ import javax.inject.Inject
 
 class DeleteUserUseCase @Inject constructor(private val userRepository: UserRepository) {
 
-    suspend fun deleteUser(user: UserModel): Boolean {
-        return userRepository.deleteUser(user)
-    }
+    suspend fun deleteUser(user: UserModel) = userRepository.deleteUser(user)
 }

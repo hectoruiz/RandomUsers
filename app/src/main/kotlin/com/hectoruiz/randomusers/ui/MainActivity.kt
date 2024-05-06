@@ -7,8 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.hectoruiz.randomusers.navigation.NavGraph
-import com.hectoruiz.ui.userlist.theme.RandomUsersTheme
+import androidx.navigation.compose.rememberNavController
+import com.hectoruiz.randomusers.navigation.NavigationGraph
+import com.hectoruiz.ui.theme.RandomUsersTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -22,7 +23,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NavGraph()
+                    NavigationGraph(rememberNavController())
                 }
             }
         }
