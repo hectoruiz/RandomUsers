@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="more_images">More images</string>
-    <string name="default_error">RandomUsers</string>
+    <string name="more_users">More Users</string>
+    <string name="search_default">Search users by name, surname or email</string>
+    <string name="default_error">An unexpected error had happened. Try again later.</string>
+    <string name="network_error">Something is temporarily wrong with your network connection. Check your connectivity and try again later.</string>
 </resources>

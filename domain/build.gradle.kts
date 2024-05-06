@@ -1,7 +1,6 @@
 plugins {
     id("java-library")
     id("kotlin")
-    id("kotlinx-serialization")
 }
 
 java {
@@ -11,8 +10,7 @@ java {
 
 dependencies {
     implementation("javax.inject:javax.inject:1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.2")

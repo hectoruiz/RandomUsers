@@ -1,4 +1,4 @@
-package com.hectoruiz.ui.userlist.theme
+package com.hectoruiz.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
