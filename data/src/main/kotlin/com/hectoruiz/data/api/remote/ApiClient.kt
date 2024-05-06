@@ -4,19 +4,10 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
-class ApiClient {
-    private val loggingInterceptor =
-        HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
-
-    private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
-        .addInterceptor(loggingInterceptor)
-        .readTimeout(TIMEOUT, TimeUnit.SECONDS).build()
-
+class ApiClient @Inject constructor(okHttpClient: OkHttpClient) {
     private val contentType = "application/json".toMediaType()
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -26,8 +17,8 @@ class ApiClient {
         .addConverterFactory(json.asConverterFactory(contentType))
         .build()
 
-    private companion object {
-        const val BASE_URL = "https://randomuser.me/"
+    companion object {
+        const val BASE_URL = "https://api.randomuser.me/"
         const val TIMEOUT = 20L
     }
 }
