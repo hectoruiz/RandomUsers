@@ -1,38 +1,38 @@
 package com.hectoruiz.ui.userdetail
 
-import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -55,96 +55,202 @@ private val userPreview = UserModel(
 
 private val userDetailUiStatePreview = UserDetailUiState(user = userPreview)
 
-@Preview(showBackground = true, apiLevel = 33)
 @Composable
-fun UserDetailScreenPreview() {
-    RandomUsersTheme {
-        UserDetailScreen(userDetailUiState = userDetailUiStatePreview) {}
+fun UserDetailScreen(userDetailUiState: UserDetailUiState, onBack: () -> Unit) {
+    val configuration = LocalConfiguration.current
+    if (configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+        PortraitUserDetailScreen(userDetailUiState) { onBack() }
+    } else {
+        LandscapeUserDetailScreen(userDetailUiState) { onBack() }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, apiLevel = 33)
 @Composable
-fun UserDetailScreen(userDetailUiState: UserDetailUiState, onBack: () -> Unit) {
-    val user = userDetailUiState.user
-    val targetColor = when (user.gender) {
-        Gender.MALE -> Color.Cyan
-        Gender.FEMALE -> Color.Magenta
-        Gender.UNSPECIFIED -> Color.Yellow
+fun PortraitUserDetailScreenPreview() {
+    RandomUsersTheme {
+        PortraitUserDetailScreen(userDetailUiState = userDetailUiStatePreview) {}
     }
-    val infiniteTransition = rememberInfiniteTransition("card_background_transition")
-    val color by infiniteTransition.animateColor(
-        initialValue = targetColor.copy(alpha = 0.5f),
-        targetValue = targetColor,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ), label = "card_background_color"
-    )
+}
 
+@Composable
+fun PortraitUserDetailScreen(userDetailUiState: UserDetailUiState, onBack: () -> Unit) {
     Scaffold(topBar = {
-        TopAppBar(
-            title = {},
-            navigationIcon = {
-                IconButton(onClick = onBack, modifier = Modifier.testTag(TAG_USER_DETAIL_BACK)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null
-                    )
-                }
-            },
-        )
+        Box {
+            AsyncImage(
+                model = userDetailUiState.user.picture,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxHeight(0.5f)
+                    .align(Alignment.TopCenter),
+                contentScale = ContentScale.Fit,
+                placeholder = painterResource(id = R.drawable.baseline_account_circle_24),
+                error = painterResource(id = R.drawable.baseline_account_circle_24),
+            )
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.testTag(TAG_USER_DETAIL_BACK)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null
+                )
+            }
+        }
     }) { contentPadding ->
         Box(
             modifier = Modifier
                 .padding(contentPadding)
                 .fillMaxSize(),
-            contentAlignment = Alignment.Center
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                AsyncImage(
-                    model = user.picture,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .clip(CircleShape),
-                    placeholder = painterResource(id = R.drawable.baseline_account_circle_24),
-                    error = painterResource(id = R.drawable.baseline_account_circle_24),
-                )
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag(TAG_USER_DETAIL),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            tint = color,
-                            modifier = Modifier.size(30.dp),
-                            contentDescription = null
-                        )
-                        Text(text = user.name)
-                    }
-                    Text(text = user.email)
-                    Text(text = user.address, overflow = TextOverflow.Ellipsis, maxLines = 1)
-                    Text(text = user.location, overflow = TextOverflow.Ellipsis, maxLines = 1)
-                    Text(text = user.registeredDate)
-                }
-            }
+            UserDetail(user = userDetailUiState.user)
             if (userDetailUiState.loading) CircularProgressIndicator(
                 modifier = Modifier
                     .testTag(TAG_USER_DETAIL_CIRCULAR_PROGRESS_INDICATOR)
                     .align(Alignment.Center)
             )
         }
+    }
+}
+
+@Preview(showBackground = true, apiLevel = 33, device = Devices.AUTOMOTIVE_1024p, widthDp = 640)
+@Composable
+fun LandscapeUserDetailScreenPreview() {
+    RandomUsersTheme {
+        LandscapeUserDetailScreen(userDetailUiState = userDetailUiStatePreview) {}
+    }
+}
+
+@Composable
+fun LandscapeUserDetailScreen(userDetailUiState: UserDetailUiState, onBack: () -> Unit) {
+    Scaffold { contentPadding ->
+        Row(modifier = Modifier.padding(contentPadding)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.5F)
+            ) {
+                AsyncImage(
+                    model = userDetailUiState.user.picture,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .align(Alignment.CenterStart),
+                    contentScale = ContentScale.FillBounds,
+                    placeholder = painterResource(id = R.drawable.baseline_account_circle_24),
+                    error = painterResource(id = R.drawable.baseline_account_circle_24),
+                )
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.testTag(TAG_USER_DETAIL_BACK)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                UserDetail(user = userDetailUiState.user)
+                if (userDetailUiState.loading) CircularProgressIndicator(
+                    modifier = Modifier
+                        .testTag(TAG_USER_DETAIL_CIRCULAR_PROGRESS_INDICATOR)
+                        .align(Alignment.Center)
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, apiLevel = 33)
+@Composable
+fun UserDetailPreview() {
+    UserDetail(user = userPreview)
+}
+
+@Composable
+fun UserDetail(user: UserModel) {
+    val painterGender = when (user.gender) {
+        Gender.MALE -> painterResource(id = R.drawable.male_gender_icon)
+        Gender.FEMALE -> painterResource(id = R.drawable.female_gender_icon)
+        Gender.UNSPECIFIED -> painterResource(id = R.drawable.undefined_gender_icon)
+    }
+
+    Column(
+        modifier = Modifier
+            .testTag(TAG_USER_DETAIL)
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = Alignment.Start,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            Icon(
+                painter = painterGender,
+                contentDescription = null,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+            Text(text = user.name)
+        }
+        HorizontalDivider(modifier = Modifier.height(8.dp), thickness = 0.5.dp)
+
+        UserInfo(
+            icon = Icons.Filled.Email,
+            userInfoComposable = { Text(text = user.email) })
+        HorizontalDivider(modifier = Modifier.height(8.dp), thickness = 0.5.dp)
+
+        UserInfo(
+            icon = Icons.Filled.Place,
+            userInfoComposable = {
+                Column {
+                    Text(
+                        text = user.address,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 2
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = user.location,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 2
+                    )
+                }
+            })
+        HorizontalDivider(modifier = Modifier.height(8.dp), thickness = 0.5.dp)
+
+        UserInfo(icon = Icons.Filled.DateRange) {
+            Text(text = user.registeredDate)
+        }
+    }
+}
+
+
+@Preview(showBackground = true, apiLevel = 33)
+@Composable
+fun UserInfoPreview() {
+    RandomUsersTheme {
+        UserInfo(icon = Icons.Filled.Face, userInfoComposable = { Text(text = "Chris Brown") })
+    }
+}
+
+@Composable
+fun UserInfo(
+    icon: ImageVector, userInfoComposable: @Composable () -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.align(Alignment.CenterVertically)
+        )
+        userInfoComposable()
     }
 }
 
