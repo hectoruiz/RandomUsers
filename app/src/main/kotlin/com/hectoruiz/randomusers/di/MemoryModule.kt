@@ -25,7 +25,7 @@ abstract class MemoryModule {
             return Room.databaseBuilder(
                 applicationContext,
                 AppDatabase::class.java, DATABASE_NAME
-            ).build()
+            ).fallbackToDestructiveMigration().build()
         }
 
         @Provides
