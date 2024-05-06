@@ -4,12 +4,15 @@ import app.cash.turbine.test
 import com.hectoruiz.domain.usecases.DeleteUserUseCase
 import com.hectoruiz.domain.usecases.FetchUsersUseCase
 import com.hectoruiz.domain.usecases.GetUsersUseCase
+import com.hectoruiz.domain.commons.Error
 import com.hectoruiz.ui.MainDispatcherRule
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -17,7 +20,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -46,7 +48,7 @@ class UserListViewModelTest {
     @Test
     fun `coroutine exception handled`() {
         runTest {
-            coEvery { fetchUsersUseCase.getRemoteUsers(4444) } returns Result.failure(Throwable())
+            coEvery { fetchUsersUseCase.getRemoteUsers(true) } returns Result.failure(Throwable())
             every { getUsersUseCase.getUsers() } returns flowOf(emptyList())
 
             userListViewModel =
@@ -55,16 +57,17 @@ class UserListViewModelTest {
             val errorJob = launch {
                 userListViewModel.error.test {
                     val errorState = awaitItem()
-                    assertTrue(errorState is ErrorState.NetworkError)
+                    assertTrue(errorState is Error.Network)
                     cancelAndConsumeRemainingEvents()
                 }
             }
-            assertTrue(userListViewModel.loading.value)
+            assertTrue(userListViewModel.uiState.value is UserListUiState.Loading)
 
             errorJob.join()
             errorJob.cancel()
 
             assertTrue(userListViewModel.users.first().isEmpty())
+            assertTrue(userListViewModel.uiState.value is UserListUiState.NotLoading)
         }
     }
 
@@ -85,17 +88,17 @@ class UserListViewModelTest {
             val errorJob = launch {
                 userListViewModel.error.test {
                     val errorState = awaitItem()
-                    assertTrue(errorState is ErrorState.NetworkError)
-                    assertEquals(errorMessage, (errorState as ErrorState.NetworkError).message)
+                    assertTrue(errorState is Error.Network)
                     cancelAndConsumeRemainingEvents()
                 }
             }
-            assertTrue(userListViewModel.loading.value)
+            assertTrue(userListViewModel.uiState.value is UserListUiState.Loading)
 
             errorJob.join()
             errorJob.cancel()
 
             assertTrue(userListViewModel.users.first().isEmpty())
+            assertTrue(userListViewModel.uiState.value is UserListUiState.NotLoading)
         }
     }
 
@@ -119,14 +122,96 @@ class UserListViewModelTest {
             userListViewModel =
                 UserListViewModel(getUsersUseCase, fetchUsersUseCase, deleteUserUseCase)
 
-            assertTrue(userListViewModel.loading.value)
-            assertTrue(userListViewModel.page.value == 1)
+            assertTrue(userListViewModel.uiState.value is UserListUiState.Loading)
 
             usersJob.join()
             usersJob.cancel()
 
-            assertFalse(userListViewModel.loading.value)
-            assertTrue(userListViewModel.page.value == 2)
+            assertTrue(userListViewModel.uiState.value is UserListUiState.NotLoading)
+        }
+    }
+
+    @Test
+    fun `error retrieving more users`() {
+        runTest {
+            val errorMessage = "Network message"
+            coEvery { fetchUsersUseCase.getRemoteUsers(any()) } returns Result.success(Unit) andThen Result.failure(
+                Throwable(
+                    errorMessage
+                )
+            )
+            every { getUsersUseCase.getUsers() } returns flowOf(listOf(mockk(), mockk(), mockk()))
+
+            userListViewModel =
+                UserListViewModel(getUsersUseCase, fetchUsersUseCase, deleteUserUseCase)
+
+            val errorJob = launch {
+                userListViewModel.users.test {
+                    val emptyUsers = awaitItem()
+                    assertTrue(emptyUsers.isEmpty())
+
+                    val users = awaitItem()
+                    assertTrue(users.isNotEmpty())
+                    assertTrue(users.size == 3)
+                }
+                userListViewModel.error.test {
+                    val errorState = awaitItem()
+                    assertTrue(errorState is Error.Network)
+                    cancelAndConsumeRemainingEvents()
+                }
+            }
+            assertTrue(userListViewModel.uiState.value is UserListUiState.Loading)
+
+            delay(500L)
+
+            userListViewModel.getMoreUsers()
+
+            assertTrue(userListViewModel.uiState.value is UserListUiState.LoadMore)
+
+            errorJob.join()
+            errorJob.cancel()
+
+            assertTrue(userListViewModel.uiState.value is UserListUiState.NotLoading)
+        }
+    }
+
+    @Test
+    fun `success retrieving more users`() {
+        runTest {
+            coEvery { fetchUsersUseCase.getRemoteUsers(any()) } returns Result.success(Unit)
+            every { getUsersUseCase.getUsers() } returns flowOf(
+                listOf(
+                    mockk(),
+                    mockk(),
+                    mockk()
+                )
+            )
+
+            val usersJob = launch {
+                userListViewModel.users.test {
+                    val emptyUsers = awaitItem()
+                    assertTrue(emptyUsers.isEmpty())
+
+                    val users = awaitItem()
+                    assertTrue(users.isNotEmpty())
+                    assertTrue(users.size == 3)
+                    cancelAndConsumeRemainingEvents()
+                }
+            }
+            userListViewModel =
+                UserListViewModel(getUsersUseCase, fetchUsersUseCase, deleteUserUseCase)
+
+            assertTrue(userListViewModel.uiState.value is UserListUiState.Loading)
+
+            userListViewModel.getMoreUsers()
+
+            assertTrue(userListViewModel.uiState.value is UserListUiState.LoadMore)
+
+            usersJob.join()
+            usersJob.cancel()
+
+            assertTrue(userListViewModel.uiState.value is UserListUiState.NotLoading)
+            coVerify { fetchUsersUseCase.getRemoteUsers(false) }
         }
     }
 
@@ -139,22 +224,21 @@ class UserListViewModelTest {
             userListViewModel =
                 UserListViewModel(getUsersUseCase, fetchUsersUseCase, deleteUserUseCase)
 
-            assertTrue(userListViewModel.loading.value)
+            assertTrue(userListViewModel.uiState.value is UserListUiState.Loading)
 
             val errorJob = launch {
                 userListViewModel.error.test {
-                    assertEquals(ErrorState.Unknown, awaitItem())
+                    assertEquals(Error.Other, awaitItem())
                     cancelAndConsumeRemainingEvents()
                 }
             }
 
             userListViewModel.deleteUser(mockk())
-            assertTrue(userListViewModel.loading.value)
 
             errorJob.join()
             errorJob.cancel()
 
-            assertFalse(userListViewModel.loading.value)
+            assertTrue(userListViewModel.uiState.value is UserListUiState.NotLoading)
         }
     }
 
@@ -163,17 +247,23 @@ class UserListViewModelTest {
         runTest {
             coEvery { fetchUsersUseCase.getRemoteUsers(any()) } returns Result.success(Unit)
             coEvery { deleteUserUseCase.deleteUser(any()) } returns true
-            every { getUsersUseCase.getUsers() } returns flowOf(emptyList())
+            every { getUsersUseCase.getUsers() } returns flowOf(
+                listOf(
+                    mockk(),
+                    mockk(),
+                    mockk()
+                )
+            ) andThen flowOf(
+                listOf(mockk(), mockk())
+            )
             userListViewModel =
                 UserListViewModel(getUsersUseCase, fetchUsersUseCase, deleteUserUseCase)
 
-            assertTrue(userListViewModel.loading.value)
+            assertTrue(userListViewModel.uiState.value is UserListUiState.Loading)
 
             userListViewModel.deleteUser(mockk())
 
-            delay(500L)
-
-            assertFalse(userListViewModel.loading.value)
+            verify { getUsersUseCase.getUsers() }
         }
     }
 }

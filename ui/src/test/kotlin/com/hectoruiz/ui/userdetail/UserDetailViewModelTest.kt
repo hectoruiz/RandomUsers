@@ -1,19 +1,19 @@
 package com.hectoruiz.ui.userdetail
 
 import androidx.lifecycle.SavedStateHandle
-import com.hectoruiz.domain.models.Gender
+import app.cash.turbine.test
 import com.hectoruiz.domain.models.UserModel
 import com.hectoruiz.domain.usecases.GetUserUseCase
+import com.hectoruiz.domain.commons.Error
 import com.hectoruiz.ui.MainDispatcherRule
-import com.hectoruiz.ui.userlist.ErrorState
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -42,43 +42,29 @@ class UserDetailViewModelTest {
 
     @Before
     fun setUp() {
-        every { savedStateHandle.get<String>("userId") } returns "1"
+        every { savedStateHandle.get<String>(PARAM_KEY) } returns USER_EMAIL
     }
 
     @Test
     fun `error retrieving specific user`() {
         runTest {
-            coEvery { getUserUseCase.getUser("1") } returns flowOf(Result.failure(Throwable()))
+            coEvery { getUserUseCase.getUser(USER_EMAIL) } returns flowOf(Result.failure(Throwable()))
 
             userDetailViewModel = UserDetailViewModel(savedStateHandle, getUserUseCase)
 
-            userDetailViewModel.userDetailUiState.value.apply {
-                assertTrue(this.loading)
-                assertEquals(
-                    UserModel(
-                        gender = Gender.UNSPECIFIED,
-                        id = "",
-                        name = "",
-                        email = "",
-                        phone = "",
-                        picture = "",
-                        thumbnail = "",
-                        registeredDate = "",
-                        address = "",
-                        location = "",
-                        isActive = false
-                    ), this.user
-                )
-                assertEquals(ErrorState.NoError, this.error)
-            }
+            assertTrue(userDetailViewModel.userDetailUiState.value.loading)
 
-            delay(200L)
-
-            userDetailViewModel.userDetailUiState.value.apply {
-                assertFalse(this.loading)
-                assertEquals(user, this.user)
-                assertEquals(ErrorState.Unknown, this.error)
+            val useDetailJob = launch {
+                userDetailViewModel.userDetailUiState.test {
+                    val uiState = awaitItem()
+                    assertFalse(uiState.loading)
+                    assertEquals("", uiState.user.email)
+                    assertEquals(Error.Other, uiState.error)
+                    cancelAndConsumeRemainingEvents()
+                }
             }
+            useDetailJob.join()
+            useDetailJob.cancel()
         }
     }
 
@@ -86,37 +72,27 @@ class UserDetailViewModelTest {
     fun `success retrieving specific user`() {
         runTest {
             val user = mockk<UserModel>()
-            coEvery { getUserUseCase.getUser("1") } returns flowOf(Result.success(user))
+            every { user.email } returns USER_EMAIL
+            val result = Result.success(user)
+
+            coEvery { getUserUseCase.getUser(USER_EMAIL) } returns flowOf(result)
 
             userDetailViewModel = UserDetailViewModel(savedStateHandle, getUserUseCase)
 
-            userDetailViewModel.userDetailUiState.value.apply {
-                assertTrue(this.loading)
-                assertEquals(
-                    UserModel(
-                        gender = Gender.UNSPECIFIED,
-                        id = "",
-                        name = "",
-                        email = "",
-                        phone = "",
-                        picture = "",
-                        thumbnail = "",
-                        registeredDate = "",
-                        address = "",
-                        location = "",
-                        isActive = false
-                    ), this.user
-                )
-                assertEquals(ErrorState.NoError, this.error)
-            }
+            assertTrue(userDetailViewModel.userDetailUiState.value.loading)
 
-            delay(200L)
-
-            userDetailViewModel.userDetailUiState.value.apply {
-                assertFalse(this.loading)
-                assertEquals(user, this.user)
-                assertEquals(ErrorState.NoError, this.error)
+            val useDetailJob = launch {
+                userDetailViewModel.userDetailUiState.test {
+                    val uiState = awaitItem()
+                    assertFalse(uiState.loading)
+                    assertEquals(USER_EMAIL, uiState.user.email)
+                    cancelAndConsumeRemainingEvents()
+                }
             }
+            useDetailJob.join()
+            useDetailJob.cancel()
         }
     }
 }
+
+private const val USER_EMAIL = "user@email.com"

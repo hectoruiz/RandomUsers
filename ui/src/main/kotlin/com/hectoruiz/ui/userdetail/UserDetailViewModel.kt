@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hectoruiz.domain.usecases.GetUserUseCase
-import com.hectoruiz.ui.userlist.ErrorState
+import com.hectoruiz.domain.commons.Error
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,13 +19,13 @@ class UserDetailViewModel @Inject constructor(
     private val getUserUseCase: GetUserUseCase,
 ) : ViewModel() {
 
-    private val userId: String = savedStateHandle["userId"] ?: ""
+    private val email: String = savedStateHandle[PARAM_KEY] ?: ""
     private val _userDetailUiState = MutableStateFlow(UserDetailUiState())
     val userDetailUiState: StateFlow<UserDetailUiState> = _userDetailUiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            getUserUseCase.getUser(userId).collect { result ->
+            getUserUseCase.getUser(email).collect { result ->
                 result.fold(
                     onSuccess = {
                         _userDetailUiState.update { state ->
@@ -34,7 +34,7 @@ class UserDetailViewModel @Inject constructor(
                     },
                     onFailure = {
                         _userDetailUiState.update { state ->
-                            state.copy(loading = false, error = ErrorState.Unknown)
+                            state.copy(loading = false, error = Error.Other)
                         }
                     }
                 )
@@ -42,3 +42,5 @@ class UserDetailViewModel @Inject constructor(
         }
     }
 }
+
+const val PARAM_KEY = "email"

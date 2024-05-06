@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.hectoruiz.domain.models.Gender
 import com.hectoruiz.domain.models.UserModel
@@ -17,11 +18,10 @@ import org.junit.runner.RunWith
 class UserDetailScreenTest {
 
     @get:Rule
-    val rule = createAndroidComposeRule<ComponentActivity>()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private val user = UserModel(
         gender = Gender.MALE,
-        id = "1",
         name = USER_DETAIL_NAME,
         email = USER_DETAIL_EMAIL,
         thumbnail = "",
@@ -36,33 +36,42 @@ class UserDetailScreenTest {
     @Test
     fun showLoaderWhenItsLoading() {
         userDetailUiState = userDetailUiState.copy(loading = true)
-        rule.setContent { UserDetailScreen(userDetailUiState) }
-        rule.onNodeWithTag(TAG_USER_DETAIL_CIRCULAR_PROGRESS_INDICATOR).assertExists()
+        composeRule.setContent { UserDetailScreen(userDetailUiState) {} }
+        composeRule.onNodeWithTag(TAG_USER_DETAIL_CIRCULAR_PROGRESS_INDICATOR).assertExists()
     }
 
     @Test
     fun hideLoaderWhenItsNotLoading() {
         userDetailUiState = userDetailUiState.copy(loading = false)
-        rule.setContent { UserDetailScreen(userDetailUiState) }
-        rule.onNodeWithTag(TAG_USER_DETAIL_CIRCULAR_PROGRESS_INDICATOR).assertDoesNotExist()
+        composeRule.setContent { UserDetailScreen(userDetailUiState) {} }
+        composeRule.onNodeWithTag(TAG_USER_DETAIL_CIRCULAR_PROGRESS_INDICATOR).assertDoesNotExist()
+    }
+
+    @Test
+    fun userClickOnBack() {
+        var onBackClicked = false
+        composeRule.setContent { UserDetailScreen(userDetailUiState) { onBackClicked = true } }
+        composeRule.onNodeWithTag(TAG_USER_DETAIL_BACK).performClick()
+
+        assertTrue(onBackClicked)
     }
 
     @Test
     fun isShowingUserDetail() {
-        rule.setContent { UserDetailScreen(userDetailUiState) }
+        composeRule.setContent { UserDetailScreen(userDetailUiState) {} }
 
-        rule.onNodeWithText(USER_DETAIL_NAME).assertIsDisplayed()
-        rule.onNodeWithText(USER_DETAIL_EMAIL).assertIsDisplayed()
-        rule.onNodeWithText(USER_DETAIL_ADDRESS).assertIsDisplayed()
-        rule.onNodeWithText(USER_DETAIL_LOCATION).assertIsDisplayed()
-        rule.onNodeWithText(USER_DETAIL_REGISTERED).assertIsDisplayed()
+        composeRule.onNodeWithText(USER_DETAIL_NAME).assertIsDisplayed()
+        composeRule.onNodeWithText(USER_DETAIL_EMAIL).assertIsDisplayed()
+        composeRule.onNodeWithText(USER_DETAIL_ADDRESS).assertIsDisplayed()
+        composeRule.onNodeWithText(USER_DETAIL_LOCATION).assertIsDisplayed()
+        composeRule.onNodeWithText(USER_DETAIL_REGISTERED).assertIsDisplayed()
     }
 
     private companion object {
         const val USER_DETAIL_NAME = "Chris Brown"
         const val USER_DETAIL_EMAIL = "chrisbrown@gmail.com"
         const val USER_DETAIL_ADDRESS = "Oxford Street 33"
-        const val USER_DETAIL_LOCATION = "Oxford Long River United Kingdom Long Long loong"
+        const val USER_DETAIL_LOCATION = "Oxford Long River United Kingdom Long Long Long"
         const val USER_DETAIL_REGISTERED = "20-04-2009"
     }
 }
