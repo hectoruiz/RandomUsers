@@ -47,7 +47,7 @@ class UserRemoteDataSourceImplTest {
         val errorCode = 400
         val errorMessage = "BadRequest"
         val errorResponse = Response.error<UsersApiModel>(errorCode, errorMessage.toResponseBody())
-        coEvery { apiService.getUsers(any(), any(), any()) } returns errorResponse
+        coEvery { apiService.getUsers(any()) } returns errorResponse
 
         val result = runBlocking {
             userRemoteDataSource.getUsers(1)
@@ -62,7 +62,7 @@ class UserRemoteDataSourceImplTest {
     fun `success retrieving users from remote data source`() {
         val userApiModel = mockk<UsersApiModel>()
         val successResponse = Response.success(userApiModel)
-        coEvery { apiService.getUsers(any(), any(), any()) } returns successResponse
+        coEvery { apiService.getUsers(any()) } returns successResponse
 
         val result = runBlocking { userRemoteDataSource.getUsers(1) }
 

@@ -11,7 +11,6 @@ data class UsersApiModel(
 
 @Serializable
 data class UserApiModel(
-    val login: UserLoginApiModel? = null,
     val gender: String? = null,
     val name: UserNameApiModel? = null,
     val email: String? = null,
@@ -19,11 +18,6 @@ data class UserApiModel(
     val phone: String? = null,
     val location: UserLocationApiModel? = null,
     val registered: UserRegisteredApiModel? = null,
-)
-
-@Serializable
-data class UserLoginApiModel(
-    val uuid: String? = null,
 )
 
 @Serializable
@@ -66,7 +60,6 @@ fun UserApiModel?.toModel() =
             FEMALE -> Gender.FEMALE
             else -> Gender.UNSPECIFIED
         },
-        id = this?.login?.uuid.orEmpty(),
         name = listOfNotNull(this?.name?.first, this?.name?.last).joinToString(" "),
         email = this?.email.orEmpty(),
         phone = this?.phone.orEmpty(),
@@ -85,4 +78,3 @@ fun UserApiModel?.toModel() =
 
 const val MALE = "male"
 const val FEMALE = "female"
-

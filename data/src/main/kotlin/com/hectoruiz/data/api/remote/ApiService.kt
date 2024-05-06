@@ -7,18 +7,10 @@ import retrofit2.http.Query
 
 interface ApiService {
 
-    @GET("api/")
-    suspend fun getUsers(
-        @Query(PAGE) page: Int,
-        @Query(RESULTS) numItems: Int,
-        @Query(SEED) seed: String,
-    ): Response<UsersApiModel>
+    @GET("/?page=1&seed=abc&exc=dob,login,id,nat&noinfo")
+    suspend fun getUsers(@Query(RESULTS) results: Int): Response<UsersApiModel>
 
     private companion object {
-        const val PAGE = "page"
         const val RESULTS = "results"
-        const val SEED = "seed"
     }
 }
-
-
