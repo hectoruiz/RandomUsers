@@ -7,9 +7,11 @@ interface UserRepository {
 
     fun getUsers(): Flow<List<UserModel>>
 
-    suspend fun getRemoteUsers(page: Int): Result<Unit>
+    suspend fun getAmountUsers(): Int
+
+    suspend fun getRemoteUsers(results: Int): Result<Unit>
 
     suspend fun deleteUser(userModel: UserModel): Boolean
 
-    fun getUser(userId: String): Flow<Result<UserModel>>
+    fun getUser(email: String): Flow<Result<UserModel>>
 }
