@@ -14,12 +14,15 @@ interface UserDao {
     @Query("SELECT * FROM users")
     fun getAll(): Flow<List<UserEntity>>
 
+    @Query("SELECT COUNT(email) FROM users")
+    suspend fun getNumUsers(): Int
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(users: List<UserEntity>)
 
     @Update
     suspend fun update(user: UserEntity): Int
 
-    @Query("SELECT * FROM users WHERE id = :userId")
-    fun getUser(userId: String): Flow<UserEntity?>
+    @Query("SELECT * FROM users WHERE email = :email")
+    fun getUser(email: String): Flow<UserEntity?>
 }

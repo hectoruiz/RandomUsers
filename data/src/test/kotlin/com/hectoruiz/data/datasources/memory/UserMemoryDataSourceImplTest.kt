@@ -4,6 +4,7 @@ import com.hectoruiz.data.api.memory.UserDao
 import com.hectoruiz.data.entities.UserEntity
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -37,6 +38,24 @@ class UserMemoryDataSourceImplTest {
     }
 
     @Test
+    fun `get amount of users`() {
+        coEvery { userDao.getNumUsers() } returns 44
+
+        val result = runBlocking { userMemoryDataSource.getNumUsers() }
+
+        assertEquals(44, result)
+    }
+
+    @Test
+    fun `insert users`() {
+        coEvery { userDao.insertAll(any()) } returns Unit
+
+        runBlocking { userMemoryDataSource.addUsers(emptyList()) }
+
+        coVerify { userDao.insertAll(any()) }
+    }
+
+    @Test
     fun `users list from the database`() {
         coEvery { userDao.getAll() } returns flowOf(listOf(mockk(), mockk(), mockk(), mockk()))
 
@@ -66,22 +85,25 @@ class UserMemoryDataSourceImplTest {
     @Test
     fun `error get specific user from database`() {
         val userNotFound = null
-        coEvery { userDao.getUser("1") } returns flowOf(userNotFound)
+        coEvery { userDao.getUser(EMAIL) } returns flowOf(userNotFound)
 
-        val result = runBlocking { userMemoryDataSource.getUser("1").first() }
+        val result = runBlocking { userMemoryDataSource.getUser(EMAIL).first() }
 
         assertNull(result)
     }
 
     @Test
     fun `success get specific user from database`() {
-        val userId = "1"
-        val user = UserEntity(userId)
-        coEvery { userDao.getUser(userId) } returns flowOf(user)
+        val user = UserEntity(email = EMAIL)
+        coEvery { userDao.getUser(EMAIL) } returns flowOf(user)
 
-        val result = runBlocking { userMemoryDataSource.getUser(userId).first() }
+        val result = runBlocking { userMemoryDataSource.getUser(EMAIL).first() }
 
         assertNotNull(result)
-        assertEquals(userId, result?.id)
+        assertEquals(EMAIL, result?.email)
+    }
+
+    companion object {
+        const val EMAIL = "email@company.com"
     }
 }

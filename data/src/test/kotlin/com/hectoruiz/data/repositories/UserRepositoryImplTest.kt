@@ -3,7 +3,7 @@ package com.hectoruiz.data.repositories
 import com.hectoruiz.data.entities.UserEntity
 import com.hectoruiz.data.entities.toModel
 import com.hectoruiz.data.models.UsersApiModel
-import com.hectoruiz.domain.Constants
+import com.hectoruiz.data.repositories.UserRepositoryImpl.Companion.USER_NOT_FOUND
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
@@ -48,6 +48,15 @@ class UserRepositoryImplTest {
 
         assertTrue(result.isNotEmpty())
         assertEquals(userListEntity.toModel(), result)
+    }
+
+    @Test
+    fun `get amount of users`() {
+        coEvery { memoryDataSource.getNumUsers() } returns 50
+
+        val result = runBlocking { userRepository.getAmountUsers() }
+
+        assertEquals(50, result)
     }
 
     @Test
@@ -101,7 +110,7 @@ class UserRepositoryImplTest {
 
         assertTrue(result.isFailure)
         result.onFailure {
-            assertEquals(Constants.USER_NOT_FOUND, it.message)
+            assertEquals(USER_NOT_FOUND, it.message)
         }
     }
 

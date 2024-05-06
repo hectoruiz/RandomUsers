@@ -30,7 +30,6 @@ class UserDataMapperTest {
 
         assertTrue(userModelList.size == 1)
 
-        assertEquals("", userModelList[0].id)
         assertEquals(Gender.UNSPECIFIED, userModelList[0].gender)
         assertEquals("", userModelList[0].name)
         assertEquals("", userModelList[0].email)
@@ -44,7 +43,6 @@ class UserDataMapperTest {
 
     @Test
     fun `list api model to list user model`() {
-        val userLoginApiModel = UserLoginApiModel(uuid = "9999")
         val userNameApiModel = UserNameApiModel(first = "First Name", last = "Second Name")
         val userPictureApiModel = UserPictureApiModel(large = "large", thumbnail = "thumbnail")
         val userStreetApiModel = UserStreetApiModel(number = 12, name = "Street")
@@ -55,7 +53,6 @@ class UserDataMapperTest {
         val userRegisteredApiModel = UserRegisteredApiModel(date = "date")
 
         val userApiModel = UserApiModel(
-            login = userLoginApiModel,
             gender = "female",
             name = userNameApiModel,
             email = "email",
@@ -69,7 +66,6 @@ class UserDataMapperTest {
 
         assertTrue(userModelList.size == 1)
 
-        assertEquals(userApiModel.login?.uuid, userModelList[0].id)
         assertEquals(Gender.FEMALE, userModelList[0].gender)
         assertEquals(userApiModel.email, userModelList[0].email)
         assertEquals(userApiModel.phone, userModelList[0].phone)
