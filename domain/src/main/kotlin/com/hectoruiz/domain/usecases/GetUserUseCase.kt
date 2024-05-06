@@ -1,6 +1,5 @@
 package com.hectoruiz.domain.usecases
 
-import com.hectoruiz.domain.Constants.PARSING_ERROR
 import com.hectoruiz.domain.models.UserModel
 import com.hectoruiz.domain.repositories.UserRepository
 import kotlinx.coroutines.flow.Flow
@@ -12,8 +11,8 @@ import javax.inject.Inject
 
 class GetUserUseCase @Inject constructor(private val userRepository: UserRepository) {
 
-    fun getUser(userId: String): Flow<Result<UserModel>> {
-        return userRepository.getUser(userId).map { result ->
+    fun getUser(email: String): Flow<Result<UserModel>> {
+        return userRepository.getUser(email).map { result ->
             result.fold(
                 onSuccess = {
                     try {
@@ -28,6 +27,10 @@ class GetUserUseCase @Inject constructor(private val userRepository: UserReposit
                 }
             )
         }
+    }
+
+    companion object {
+        const val PARSING_ERROR = "Unexpected error"
     }
 }
 
