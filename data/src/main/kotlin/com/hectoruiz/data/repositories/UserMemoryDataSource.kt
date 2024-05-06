@@ -7,9 +7,11 @@ interface UserMemoryDataSource {
 
     fun getUsers(): Flow<List<UserEntity>>
 
+    suspend fun getNumUsers(): Int
+
     suspend fun addUsers(users: List<UserEntity>)
 
     suspend fun deleteUser(user: UserEntity): Boolean
 
-    fun getUser(userId: String): Flow<UserEntity?>
+    fun getUser(email: String): Flow<UserEntity?>
 }

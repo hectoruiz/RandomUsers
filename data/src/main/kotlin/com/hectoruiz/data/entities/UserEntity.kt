@@ -8,12 +8,12 @@ import com.hectoruiz.data.models.MALE
 import com.hectoruiz.domain.models.Gender
 import com.hectoruiz.domain.models.UserModel
 
-@Entity(tableName = USERS, indices = [Index(value = ["id"], unique = true)])
+@Entity(tableName = USERS, indices = [Index(value = ["email"], unique = true)])
 data class UserEntity(
-    @PrimaryKey val id: String,
     val gender: String? = null,
     val name: String? = null,
-    val email: String? = null,
+    @PrimaryKey
+    val email: String,
     val thumbnail: String? = null,
     val picture: String? = null,
     val phone: String? = null,
@@ -32,9 +32,8 @@ fun UserEntity.toModel() =
             FEMALE -> Gender.FEMALE
             else -> Gender.UNSPECIFIED
         },
-        id = this.id,
         name = this.name.orEmpty(),
-        email = this.email.orEmpty(),
+        email = this.email,
         phone = this.phone.orEmpty(),
         picture = this.picture.orEmpty(),
         thumbnail = this.thumbnail.orEmpty(),
@@ -52,7 +51,6 @@ fun List<UserModel>.toEntity(): List<UserEntity> {
 }
 
 fun UserModel.toEntity() = UserEntity(
-    id = this.id,
     gender = when (this.gender) {
         Gender.MALE -> MALE
         Gender.FEMALE -> FEMALE

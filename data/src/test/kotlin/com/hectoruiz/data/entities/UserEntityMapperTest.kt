@@ -8,7 +8,6 @@ import org.junit.Test
 class UserEntityMapperTest {
 
     private val userEntity = UserEntity(
-        id = "1234",
         gender = "male",
         name = "user name",
         email = "user email",
@@ -22,7 +21,6 @@ class UserEntityMapperTest {
     )
 
     private val userModel = UserModel(
-        id = "5678",
         gender = Gender.UNSPECIFIED,
         name = "user name",
         email = "user email",
@@ -42,7 +40,6 @@ class UserEntityMapperTest {
 
         assertEquals(userEntityList.size, userModelList.size)
         for (i in userEntityList.indices) {
-            assertEquals(userEntityList[i].id, userModelList[i].id)
             assertEquals(Gender.MALE, userModelList[i].gender)
             assertEquals(userEntityList[i].name, userModelList[i].name)
             assertEquals(userEntityList[i].email, userModelList[i].email)
@@ -60,7 +57,6 @@ class UserEntityMapperTest {
     fun `entity to user model`() {
         val userModel = userEntity.toModel()
 
-        assertEquals(userEntity.id, userModel.id)
         assertEquals(Gender.MALE, userModel.gender)
         assertEquals(userEntity.name, userModel.name)
         assertEquals(userEntity.email, userModel.email)
@@ -80,7 +76,6 @@ class UserEntityMapperTest {
 
         assertEquals(userModelList.size, userEntityList.size)
         for (i in userModelList.indices) {
-            assertEquals(userModelList[i].id, userEntityList[i].id)
             assertEquals("", userEntityList[i].gender)
             assertEquals(userModelList[i].name, userEntityList[i].name)
             assertEquals(userModelList[i].email, userEntityList[i].email)
@@ -98,7 +93,6 @@ class UserEntityMapperTest {
     fun `user model to entity`() {
         val entity = userModel.toEntity()
 
-        assertEquals(userModel.id, entity.id)
         assertEquals("", entity.gender)
         assertEquals(userModel.name, entity.name)
         assertEquals(userModel.email, entity.email)
