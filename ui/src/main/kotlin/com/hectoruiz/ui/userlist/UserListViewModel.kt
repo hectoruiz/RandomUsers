@@ -6,6 +6,7 @@ import com.hectoruiz.domain.models.UserModel
 import com.hectoruiz.domain.usecases.DeleteUserUseCase
 import com.hectoruiz.domain.usecases.FetchUsersUseCase
 import com.hectoruiz.domain.usecases.GetUsersUseCase
+import com.hectoruiz.domain.commons.Error
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -25,50 +27,82 @@ class UserListViewModel @Inject constructor(
     private val deleteUserUseCase: DeleteUserUseCase,
 ) : ViewModel() {
 
-    private val coroutineHandler = CoroutineExceptionHandler { _, throwable ->
-        notifyError(ErrorState.NetworkError(throwable.message ?: ""))
-        _loading.update { false }
+    private val coroutineHandler = CoroutineExceptionHandler { _, _ ->
+        notifyError(Error.Network)
+        _uiState.update { UserListUiState.NotLoading }
     }
-    private val _page = MutableStateFlow(1)
-    val page = _page.asStateFlow()
-    private val _loading = MutableStateFlow(true)
-    val loading = _loading.asStateFlow()
-    private val _error = MutableSharedFlow<ErrorState>()
+
+    private val _uiState = MutableStateFlow<UserListUiState>(UserListUiState.NotLoading)
+    val uiState = _uiState.asStateFlow()
+    private val _error = MutableSharedFlow<Error>()
     val error = _error.asSharedFlow()
-    val users =
-        getUsersUseCase.getUsers().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    private val keyword = MutableStateFlow("")
+    private val allUsers = getUsersUseCase.getUsers()
+    val users = combine(allUsers, keyword) { allUsers, searchText ->
+        if (searchText.isEmpty()) {
+            allUsers
+        } else {
+            filterUsers(allUsers, searchText)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()).also {
+        _uiState.update { UserListUiState.NotLoading }
+    }
+
+    private fun filterUsers(allUsers: List<UserModel>, searchText: String): List<UserModel> {
+        _uiState.update { UserListUiState.Loading }
+
+        val filteredUsers = allUsers.filter { user ->
+            user.name.contains(searchText) || user.email.contains(searchText)
+        }
+        _uiState.update { UserListUiState.NotLoading }
+
+        return filteredUsers
+    }
 
     init {
-        fetchUsers()
+        fetchUsers(true)
     }
 
-    fun fetchUsers() {
+    private fun fetchUsers(isFirstCall: Boolean) {
+        if (isFirstCall) _uiState.update { UserListUiState.Loading }
+
         viewModelScope.launch(coroutineHandler) {
-            _loading.update { true }
-            fetchUsersUseCase.getRemoteUsers(_page.value).fold(
+            fetchUsersUseCase.getRemoteUsers(isFirstCall).fold(
                 onSuccess = {
-                    _page.update { _page.value + 1 }
+                    // Nothing to do here.
                 },
                 onFailure = {
-                    notifyError(ErrorState.NetworkError(it.message ?: ""))
+                    notifyError(Error.Network)
                 }
             )
-            _loading.update { false }
+            _uiState.update { UserListUiState.NotLoading }
         }
     }
 
-    private fun notifyError(errorState: ErrorState) {
-        viewModelScope.launch {
-            _error.emit(errorState)
+    fun searchUsers(texToSearch: String) {
+        keyword.update { texToSearch }
+    }
+
+    fun getMoreUsers() {
+        _uiState.update { UserListUiState.LoadMore }
+        fetchUsers(false)
+    }
+
+    private fun notifyError(error: Error) {
+        viewModelScope.launch(coroutineHandler) {
+            _error.emit(error)
         }
     }
 
     fun deleteUser(user: UserModel) {
-        viewModelScope.launch {
-            _loading.update { true }
+        _uiState.update { UserListUiState.Loading }
+
+        viewModelScope.launch(coroutineHandler) {
             val isUserSaved = deleteUserUseCase.deleteUser(user)
-            _loading.update { false }
-            if (!isUserSaved) notifyError(ErrorState.Unknown)
+            if (!isUserSaved) {
+                notifyError(Error.Other)
+            }
         }
+        _uiState.update { UserListUiState.NotLoading }
     }
 }

@@ -10,12 +10,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.hectoruiz.domain.models.UserModel
+import com.hectoruiz.domain.commons.Error
 import com.hectoruiz.ui.R
 import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import org.junit.Assert.*
 import org.junit.Before
@@ -31,7 +32,7 @@ class UserListScreenTest {
     }
 
     @get:Rule
-    val rule = createAndroidComposeRule<ComponentActivity>()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private val emptyUsersList = emptyList<UserModel>()
 
@@ -41,179 +42,240 @@ class UserListScreenTest {
 
     @Before
     fun setUp() {
-        every { user.name } returns USER_NAME
-        every { user.id } returns USER_ID
-        usersList = listOf(user, user, user, user, user)
+        every { user.email } returns USER_EMAIL
+        usersList = listOf(user)
     }
 
     @Test
     fun showLoaderWhenItsLoading() {
-        rule.setContent {
+        composeRule.setContent {
             UserListScreen(
                 users = emptyUsersList,
-                loading = true,
-                error = ErrorState.NoError,
-                onClickMoreImages = {},
+                uiState = UserListUiState.Loading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
                 onDeleteUser = {},
                 navigateToDetail = {}
             )
         }
-        rule.onNodeWithTag(TAG_USER_LIST_CIRCULAR_PROGRESS_INDICATOR).assertExists()
+        composeRule.onNodeWithTag(TAG_LOADING_USERS).assertExists()
+    }
+
+    @Test
+    fun showLoaderWhenLoadingMoreUsers() {
+        composeRule.setContent {
+            UserListScreen(
+                users = emptyUsersList,
+                uiState = UserListUiState.LoadMore,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
+                onDeleteUser = {},
+                navigateToDetail = {}
+            )
+        }
+        composeRule.onNodeWithTag(TAG_LOAD_MORE_USERS).assertExists()
     }
 
     @Test
     fun hideLoaderWhenItsNotLoading() {
-        rule.setContent {
+        composeRule.setContent {
             UserListScreen(
                 users = emptyUsersList,
-                loading = false,
-                error = ErrorState.NoError,
-                onClickMoreImages = {},
+                uiState = UserListUiState.NotLoading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
                 onDeleteUser = {},
                 navigateToDetail = {}
             )
         }
-        rule.onNodeWithTag(TAG_USER_LIST_CIRCULAR_PROGRESS_INDICATOR).assertDoesNotExist()
+        composeRule.onNodeWithTag(TAG_LOADING_USERS).assertDoesNotExist()
     }
 
     @Test
     fun emptyUsersNotShowUserList() {
-        rule.setContent {
+        composeRule.setContent {
             UserListScreen(
                 users = emptyUsersList,
-                loading = false,
-                error = ErrorState.NoError,
-                onClickMoreImages = {},
+                uiState = UserListUiState.NotLoading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
                 onDeleteUser = {},
                 navigateToDetail = {}
             )
         }
-        rule.onNodeWithTag(TAG_USER_LIST).assertIsNotDisplayed()
+        composeRule.onNodeWithTag(TAG_USER_LIST).assertIsNotDisplayed()
     }
 
     @Test
     fun usersShowUserList() {
-        rule.setContent {
+        composeRule.setContent {
             UserListScreen(
                 users = usersList,
-                loading = false,
-                error = ErrorState.NoError,
-                onClickMoreImages = {},
+                uiState = UserListUiState.NotLoading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
                 onDeleteUser = {},
                 navigateToDetail = {}
             )
         }
-        rule.onNodeWithTag(TAG_USER_LIST).assertIsDisplayed()
-        rule.onNodeWithTag(TAG_USER_LIST).performScrollToIndex(usersList.size - 1)
+        composeRule.onNodeWithTag(TAG_USER_LIST).assertIsDisplayed()
+        composeRule.onNodeWithTag(TAG_USER_LIST).performScrollToIndex(usersList.size - 1)
         assertEquals(
             usersList.size,
-            rule.onAllNodes(hasTestTag(TAG_USER_LIST_ITEM)).fetchSemanticsNodes().size
+            composeRule.onAllNodes(hasTestTag(TAG_USER_LIST_ITEM)).fetchSemanticsNodes().size
         )
     }
 
     @Test
     fun userClickOnUserItem() {
-        rule.setContent {
+        every { user.email } returns USER_EMAIL
+        composeRule.setContent {
             UserListScreen(
                 users = usersList,
-                loading = false,
-                error = ErrorState.NoError,
-                onClickMoreImages = {},
+                uiState = UserListUiState.NotLoading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
                 onDeleteUser = {},
-                navigateToDetail = { assertEquals("1234", it) }
+                navigateToDetail = { assertEquals(USER_EMAIL, it) }
             )
         }
-        rule.onNodeWithTag(TAG_USER_LIST).onChildAt(0).performClick()
+        composeRule.onNodeWithTag(TAG_USER_LIST).onChildAt(0).performClick()
     }
 
     @Test
-    fun userClickOnMoreImages() {
-        var wasCalled = false
-        rule.setContent {
+    fun userClickOnMoreUsers() {
+        var onMoreUsersClicked = false
+        composeRule.setContent {
             UserListScreen(
                 users = usersList,
-                loading = false,
-                error = ErrorState.NoError,
-                onClickMoreImages = { wasCalled = true },
+                uiState = UserListUiState.NotLoading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = { onMoreUsersClicked = true },
                 onDeleteUser = {},
                 navigateToDetail = {}
             )
         }
-        rule.onNodeWithTag(TAG_MORE_IMAGES_BUTTON).performClick()
-        assertTrue(wasCalled)
+        composeRule.onNodeWithTag(TAG_USER_LIST).performScrollToIndex(usersList.size - 1)
+        composeRule.onNodeWithTag(TAG_MORE_USERS_BUTTON).performClick()
+        assertTrue(onMoreUsersClicked)
     }
 
     @Test
     fun userClickOnDeleteUser() {
-        rule.setContent {
+        composeRule.setContent {
             UserListScreen(
                 users = usersList,
-                loading = false,
-                error = ErrorState.NoError,
-                onClickMoreImages = {},
+                uiState = UserListUiState.NotLoading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
                 onDeleteUser = { assertEquals(user, it) },
                 navigateToDetail = {}
             )
         }
-        rule.onAllNodes(hasTestTag(TAG_USER_DELETE_BUTTON), false)[0].performClick()
+        composeRule.onAllNodes(hasTestTag(TAG_USER_DELETE_BUTTON), false)[0].performClick()
     }
 
     @Test
     fun isShowingNetworkError() {
-        val networkMessage = "Network error"
-        val networkError = ErrorState.NetworkError(networkMessage)
-        rule.setContent {
+        val networkMessage = composeRule.activity.getString(R.string.network_error)
+        composeRule.setContent {
             UserListScreen(
                 users = usersList,
-                loading = false,
-                error = networkError,
-                onClickMoreImages = {},
+                uiState = UserListUiState.NotLoading,
+                error = Error.Network,
+                onUserSearch = {},
+                onClickMoreUsers = {},
                 onDeleteUser = { assertEquals(user, it) },
                 navigateToDetail = {}
             )
         }
-        rule.onNodeWithText(networkMessage).assertIsDisplayed()
+        composeRule.onNodeWithText(networkMessage).assertIsDisplayed()
     }
 
     @Test
-    fun isShowingUnknownError() {
-        rule.setContent {
+    fun isShowingError() {
+        val defaultMessage = composeRule.activity.getString(R.string.default_error)
+        composeRule.setContent {
             UserListScreen(
                 users = usersList,
-                loading = false,
-                error = ErrorState.Unknown,
-                onClickMoreImages = {},
+                uiState = UserListUiState.NotLoading,
+                error = Error.Other,
+                onUserSearch = {},
+                onClickMoreUsers = {},
                 onDeleteUser = { assertEquals(user, it) },
                 navigateToDetail = {}
             )
         }
-        val unknownErrorMessage = rule.activity.getString(R.string.default_error)
-        rule.onNodeWithText(unknownErrorMessage).assertIsDisplayed()
+        composeRule.onNodeWithText(defaultMessage).assertIsDisplayed()
     }
 
     @Test
     fun isShowingUserItem() {
+        every { user.name } returns USER_NAME
         every { user.phone } returns USER_PHONE
         every { user.email } returns USER_EMAIL
-        rule.setContent {
+        composeRule.setContent {
             UserListScreen(
                 users = listOf(user),
-                loading = false,
-                error = ErrorState.Unknown,
-                onClickMoreImages = {},
+                uiState = UserListUiState.NotLoading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
                 onDeleteUser = {},
                 navigateToDetail = {}
             )
         }
-        rule.onNodeWithText(USER_NAME).assertIsDisplayed()
-        rule.onNodeWithText(USER_PHONE).assertIsDisplayed()
-        rule.onNodeWithText(USER_EMAIL).assertIsDisplayed()
+        composeRule.onNodeWithText(USER_NAME).assertIsDisplayed()
+        composeRule.onNodeWithText(USER_PHONE).assertIsDisplayed()
+        composeRule.onNodeWithText(USER_EMAIL).assertIsDisplayed()
+    }
+
+    @Test
+    fun isSearchBarNotSearching() {
+        composeRule.setContent {
+            UserListScreen(
+                users = listOf(user),
+                uiState = UserListUiState.NotLoading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
+                onDeleteUser = {},
+                navigateToDetail = {}
+            )
+        }
+        composeRule.onNodeWithTag(TAG_USER_SEARCH).performTextInput(KEY_WORD)
+        composeRule.onNodeWithTag(TAG_CLEAR_SEARCH).assertIsDisplayed()
+    }
+
+    @Test
+    fun isSearchBarSearching() {
+        composeRule.setContent {
+            UserListScreen(
+                users = listOf(user),
+                uiState = UserListUiState.NotLoading,
+                error = Error.NoError,
+                onUserSearch = {},
+                onClickMoreUsers = {},
+                onDeleteUser = {},
+                navigateToDetail = {}
+            )
+        }
+        composeRule.onNodeWithTag(TAG_USER_SEARCH).performTextInput("")
+        composeRule.onNodeWithTag(TAG_CLEAR_SEARCH).assertIsNotDisplayed()
     }
 
     private companion object {
-        const val USER_ID = "1234"
         const val USER_NAME = "User Name"
         const val USER_PHONE = "613212112"
         const val USER_EMAIL = "user@mail.com"
+        const val KEY_WORD = "ta"
     }
 }

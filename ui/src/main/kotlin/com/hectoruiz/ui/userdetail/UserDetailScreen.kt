@@ -10,14 +10,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -33,11 +39,10 @@ import coil.compose.AsyncImage
 import com.hectoruiz.domain.models.Gender
 import com.hectoruiz.domain.models.UserModel
 import com.hectoruiz.ui.R
-import com.hectoruiz.ui.userlist.theme.RandomUsersTheme
+import com.hectoruiz.ui.theme.RandomUsersTheme
 
 private val userPreview = UserModel(
     gender = Gender.MALE,
-    id = "1",
     name = "Chris Brown",
     email = "chrisbrown@gmail.com",
     thumbnail = "",
@@ -50,16 +55,17 @@ private val userPreview = UserModel(
 
 private val userDetailUiStatePreview = UserDetailUiState(user = userPreview)
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, apiLevel = 33)
 @Composable
 fun UserDetailScreenPreview() {
     RandomUsersTheme {
-        UserDetailScreen(userDetailUiState = userDetailUiStatePreview)
+        UserDetailScreen(userDetailUiState = userDetailUiStatePreview) {}
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserDetailScreen(userDetailUiState: UserDetailUiState) {
+fun UserDetailScreen(userDetailUiState: UserDetailUiState, onBack: () -> Unit) {
     val user = userDetailUiState.user
     val targetColor = when (user.gender) {
         Gender.MALE -> Color.Cyan
@@ -76,52 +82,72 @@ fun UserDetailScreen(userDetailUiState: UserDetailUiState) {
         ), label = "card_background_color"
     )
 
-    Box(
-        modifier = Modifier.padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            AsyncImage(
-                model = user.picture,
-                contentDescription = null,
-                modifier = Modifier
-                    .weight(0.5f)
-                    .clip(CircleShape),
-                placeholder = painterResource(id = R.drawable.baseline_account_circle_24),
-                error = painterResource(id = R.drawable.baseline_account_circle_24),
-            )
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+    Scaffold(topBar = {
+        TopAppBar(
+            title = {},
+            navigationIcon = {
+                IconButton(onClick = onBack, modifier = Modifier.testTag(TAG_USER_DETAIL_BACK)) {
                     Icon(
-                        imageVector = Icons.Default.Person,
-                        tint = color,
-                        modifier = Modifier.size(30.dp),
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = null
                     )
-                    Text(text = user.name)
                 }
-                Text(text = user.email)
-                Text(text = user.address, overflow = TextOverflow.Ellipsis, maxLines = 1)
-                Text(text = user.location, overflow = TextOverflow.Ellipsis, maxLines = 1)
-                Text(text = user.registeredDate)
-            }
-        }
-        if (userDetailUiState.loading) CircularProgressIndicator(
-            modifier = Modifier
-                .testTag(TAG_USER_DETAIL_CIRCULAR_PROGRESS_INDICATOR)
-                .align(Alignment.Center)
+            },
         )
+    }) { contentPadding ->
+        Box(
+            modifier = Modifier
+                .padding(contentPadding)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                AsyncImage(
+                    model = user.picture,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .clip(CircleShape),
+                    placeholder = painterResource(id = R.drawable.baseline_account_circle_24),
+                    error = painterResource(id = R.drawable.baseline_account_circle_24),
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag(TAG_USER_DETAIL),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            tint = color,
+                            modifier = Modifier.size(30.dp),
+                            contentDescription = null
+                        )
+                        Text(text = user.name)
+                    }
+                    Text(text = user.email)
+                    Text(text = user.address, overflow = TextOverflow.Ellipsis, maxLines = 1)
+                    Text(text = user.location, overflow = TextOverflow.Ellipsis, maxLines = 1)
+                    Text(text = user.registeredDate)
+                }
+            }
+            if (userDetailUiState.loading) CircularProgressIndicator(
+                modifier = Modifier
+                    .testTag(TAG_USER_DETAIL_CIRCULAR_PROGRESS_INDICATOR)
+                    .align(Alignment.Center)
+            )
+        }
     }
 }
 
+const val TAG_USER_DETAIL = "userInfoDetail"
 const val TAG_USER_DETAIL_CIRCULAR_PROGRESS_INDICATOR = "userDetailCircularProgressIndicator"
+const val TAG_USER_DETAIL_BACK = "userDetailBack"
