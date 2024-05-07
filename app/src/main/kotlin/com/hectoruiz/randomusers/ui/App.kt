@@ -1,4 +1,4 @@
-package com.hectoruiz.randomusers
+package com.hectoruiz.randomusers.ui
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
